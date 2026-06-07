@@ -1,0 +1,11 @@
+streamlit
+pandas
+torch
+monai
+numpy
+matplotlib
+google-genai
+sqlalchemy
+psycopg2
+python-dotenv
+reportlab
