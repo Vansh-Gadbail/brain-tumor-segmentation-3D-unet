@@ -6,6 +6,6 @@ numpy
 matplotlib
 google-genai
 sqlalchemy
-psycopg2
+psycopg2-binary
 python-dotenv
 reportlab

@@ -1,15 +1,10 @@
-# model_inference.py
+# inference.py
 # This is the BRAIN of the project!
 # Preprocessing EXACTLY matches the training notebook
 # Model loads ONCE at startup — not reloaded every time
 
 import torch
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')  # Non-interactive backend for servers
-import matplotlib.pyplot as plt
-import base64
-import io
 import os
 
 from monai.networks.nets import UNet
@@ -30,6 +25,12 @@ from monai.transforms import (
 )
 
 from config import MODEL_PATH
+from viewer.visualization import (
+    create_flair_image,
+    create_predicted_image,
+    create_overlay_image,
+    create_gt_image,
+)
 
 # ─────────────────────────────────────────
 # CUSTOM TRANSFORM — Exactly from your notebook
@@ -135,7 +136,10 @@ def get_transforms(has_seg=False):
         EnsureChannelFirstd(keys=all_keys),
 
         # Step 3: Reorient to RAS standard
-        Orientationd(keys=all_keys, axcodes="RAS"),
+        Orientationd(
+    keys=keys,
+    axcodes="RAS"
+),
 
         # Step 4: Resample to 1x1x1mm voxel spacing
         Spacingd(
@@ -166,29 +170,6 @@ def get_transforms(has_seg=False):
     return Compose(transforms_list)
 
 # ─────────────────────────────────────────
-# HELPER — Convert matplotlib figure → base64 PNG string
-# ─────────────────────────────────────────
-def fig_to_base64(fig):
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png', bbox_inches='tight',
-                facecolor='black', dpi=100)
-    buf.seek(0)
-    img_b64 = base64.b64encode(buf.read()).decode('utf-8')
-    plt.close(fig)
-    return img_b64
-
-# ─────────────────────────────────────────
-# HELPER — Color a segmentation mask slice
-# Colors: 0=black, 1=red(NCR), 2=green(ED), 3=blue(ET)
-# ─────────────────────────────────────────
-def mask_to_colored(mask_slice):
-    colored = np.zeros((*mask_slice.shape, 3), dtype=np.float32)
-    colored[mask_slice == 1] = [1, 0, 0]   # Red   — NCR
-    colored[mask_slice == 2] = [0, 1, 0]   # Green — ED
-    colored[mask_slice == 3] = [0, 0, 1]   # Blue  — ET
-    return colored
-
-# ─────────────────────────────────────────
 # MAIN FUNCTION — Run full inference pipeline
 # ─────────────────────────────────────────
 def run_inference(data_dict, has_seg=False):
@@ -197,7 +178,14 @@ def run_inference(data_dict, has_seg=False):
     try:
         # Apply preprocessing transforms
         transforms = get_transforms(has_seg=has_seg)
-        data = transforms(data_dict)
+    
+        try:
+            data = transforms(data_dict)
+        except Exception as e:
+            print("\n========== FULL TRACEBACK ==========")
+            traceback.print_exc()
+            print("===================================\n")
+            raise
         print("[Inference] ✅ Preprocessing complete!")
 
         # Move image to GPU/CPU and add batch dimension
@@ -214,8 +202,14 @@ def run_inference(data_dict, has_seg=False):
                 overlap=0.5
             )
 
+            probabilities = torch.softmax(output, dim=1)
+            confidence_map = torch.max(probabilities, dim=1).values
+
         # Get predicted class per voxel
         pred_mask = torch.argmax(output, dim=1).squeeze(0).cpu().numpy()
+
+        overall_confidence = float(confidence_map.mean().item())
+        print(f"Overall Confidence: {overall_confidence:.4f}")
         print("[Inference] ✅ Inference complete!")
 
         # Get ground truth mask if available
@@ -271,38 +265,19 @@ def run_inference(data_dict, has_seg=False):
         pred_slice  = pred_mask[:, :, best_slice]
 
         # Image 1 — Original FLAIR (grayscale)
-        fig, ax = plt.subplots(figsize=(4, 4))
-        fig.patch.set_facecolor('black')
-        ax.imshow(flair_slice.T, cmap='gray', origin='lower')
-        ax.axis('off')
-        flair_b64 = fig_to_base64(fig)
+        flair_b64 = create_flair_image(flair_slice)
 
         # Image 2 — Predicted segmentation mask (colored)
-        pred_colored = mask_to_colored(pred_slice)
-        fig, ax = plt.subplots(figsize=(4, 4))
-        fig.patch.set_facecolor('black')
-        ax.imshow(pred_colored.transpose(1, 0, 2), origin='lower')
-        ax.axis('off')
-        predicted_b64 = fig_to_base64(fig)
+        predicted_b64 = create_predicted_image(pred_slice)
 
         # Image 3 — FLAIR + predicted overlay
-        fig, ax = plt.subplots(figsize=(4, 4))
-        fig.patch.set_facecolor('black')
-        ax.imshow(flair_slice.T, cmap='gray', origin='lower')
-        ax.imshow(pred_colored.transpose(1, 0, 2), alpha=0.6, origin='lower')
-        ax.axis('off')
-        overlay_b64 = fig_to_base64(fig)
+        overlay_b64 = create_overlay_image(flair_slice, pred_slice)
 
         # Image 4 — Ground truth mask (only if seg provided)
         gt_b64 = ""
         if gt_mask is not None:
             gt_slice   = gt_mask[:, :, best_slice]
-            gt_colored = mask_to_colored(gt_slice)
-            fig, ax = plt.subplots(figsize=(4, 4))
-            fig.patch.set_facecolor('black')
-            ax.imshow(gt_colored.transpose(1, 0, 2), origin='lower')
-            ax.axis('off')
-            gt_b64 = fig_to_base64(fig)
+            gt_b64 = create_gt_image(gt_slice)
 
         print("[Inference] ✅ All images generated!")
 
@@ -320,6 +295,12 @@ def run_inference(data_dict, has_seg=False):
             "predicted_image": predicted_b64,
             "overlay_image":   overlay_b64,
             "gt_image":        gt_b64,
+            "overall_confidence": overall_confidence,
+            "raw_flair":       flair_img,
+            "raw_pred":        pred_mask,
+            "raw_gt":          gt_mask,
+            "best_slice":      best_slice,
+            "max_slice":       flair_img.shape[2] - 1
         }
 
     except Exception as e:

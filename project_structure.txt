@@ -1,0 +1,66 @@
+.
+├── agents.py
+├── app.py
+├── config.py
+├── database.py
+├── model_inference.py
+├── models
+│   └── best_model.pth
+├── project_info.md
+├── project_structure.txt
+├── __pycache__
+│   ├── config.cpython-314.pyc
+│   ├── database.cpython-314.pyc
+│   └── report_generator.cpython-314.pyc
+├── README.md
+├── report_generator.py
+├── requirements.txt
+├── start.sh
+├── test_report_output.pdf
+├── test_report.py
+└── venv
+    ├── bin
+    │   ├── activate
+    │   ├── activate.csh
+    │   ├── activate.fish
+    │   ├── Activate.ps1
+    │   ├── cffi-gen-src
+    │   ├── distro
+    │   ├── dotenv
+    │   ├── f2py
+    │   ├── fonttools
+    │   ├── httpx
+    │   ├── idna
+    │   ├── isympy
+    │   ├── jsonschema
+    │   ├── normalizer
+    │   ├── numpy-config
+    │   ├── pip
+    │   ├── pip3
+    │   ├── pip3.14
+    │   ├── pyftmerge
+    │   ├── pyftsubset
+    │   ├── python -> python3
+    │   ├── python3 -> /usr/bin/python3
+    │   ├── python3.14 -> python3
+    │   ├── streamlit
+    │   ├── torchfrtrace
+    │   ├── torchrun
+    │   ├── ttx
+    │   ├── uvicorn
+    │   ├── watchmedo
+    │   ├── websockets
+    │   └── 𝜋thon -> python3
+    ├── etc
+    │   └── jupyter
+    ├── include
+    │   └── site
+    ├── lib
+    │   └── python3.14
+    ├── lib64 -> lib
+    ├── pyvenv.cfg
+    └── share
+        ├── jupyter
+        └── man
+
+15 directories, 49 files

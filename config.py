@@ -18,11 +18,13 @@ DB_NAME = os.getenv("DB_NAME", "brain_tumor_db")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "root")
 
-# BraTS dataset path
-BRATS_DATASET_PATH = os.getenv("BRATS_DATASET_PATH", "C:\\Users\\Dell\\Desktop\\brain_tumor_project\\dataset")
+# BraTS dataset path (defaults to a 'dataset' folder inside the project directory for portability)
+default_dataset_path = os.path.join(os.path.dirname(__file__), "dataset")
+BRATS_DATASET_PATH = os.getenv("BRATS_DATASET_PATH", default_dataset_path)
 
-# Build the database connection string
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+import urllib.parse
+encoded_password = urllib.parse.quote_plus(DB_PASSWORD)
+DATABASE_URL = f"postgresql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Model path
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "best_model.pth")
