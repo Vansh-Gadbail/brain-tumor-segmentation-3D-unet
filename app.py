@@ -360,7 +360,7 @@ analyze_clicked = st.button(
     "🔬 Analyze MRI Scans",
     type="primary",
     disabled=button_disabled,
-    use_container_width=True
+    width="stretch"
 )
 
 if button_disabled:
@@ -619,11 +619,11 @@ if st.session_state.get("analysis_complete", False) and st.session_state.get("ac
 
     col1, col2, col3 = st.columns([1, 4, 1])
     with col1:
-        if st.button("⬅️ Previous Slice", use_container_width=True):
+        if st.button("⬅️ Previous Slice", width="stretch"):
             st.session_state["slice_idx"] = max(0, st.session_state["slice_idx"] - 1)
             st.rerun()
     with col3:
-        if st.button("Next Slice ➡️", use_container_width=True):
+        if st.button("Next Slice ➡️", width="stretch"):
             st.session_state["slice_idx"] = min(scan_result["max_slice"], st.session_state["slice_idx"] + 1)
             st.rerun()
             
@@ -671,7 +671,7 @@ if st.session_state.get("analysis_complete", False) and st.session_state.get("ac
             st.image(
                 f"data:image/png;base64,{b64_img}",
                 caption=caption,
-                use_container_width=True
+                width="stretch"
             )
 
     # Color legend below images
@@ -749,7 +749,7 @@ if st.session_state.get("analysis_complete", False) and st.session_state.get("ac
             file_name=f"brain_tumor_report_{patient_id}_{datetime.now().strftime('%Y%m%d')}.pdf",
             mime="application/pdf",
             type="primary",
-            use_container_width=True
+            width="stretch"
         )
     except Exception as e:
         st.error(f"❌ Could not generate PDF: {e}")
@@ -773,7 +773,7 @@ if patient_id:
                 "Date", "Total (cm³)",
                 "NCR (cm³)", "ED (cm³)", "ET (cm³)"
             ]
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width="stretch")
 
             st.subheader("📈 Tumor Volume Over Time")
             chart_df = df.set_index("Date")
